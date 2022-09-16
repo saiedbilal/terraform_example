@@ -24,10 +24,6 @@ func (r Registration) DataSources() []sdk.DataSource {
 func (r Registration) Resources() []sdk.Resource {
 	return []sdk.Resource{
 		MonitorsResource{},
-<<<<<<< HEAD
-=======
-		TagRulesResource{},
->>>>>>> 1f5e5db9b0 (New resources: azurerm_dynatrace_monitors, azurerm_dynatrace_tag_rules)
 	}
 }
 
