@@ -7,7 +7,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/hashicorp/go-azure-helpers/resourcemanager/identity"
 	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
