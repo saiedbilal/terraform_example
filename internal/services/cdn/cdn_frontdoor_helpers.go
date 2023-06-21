@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"strings"
 
+	// TODO: Upgrade to use the new sdk (e.g. go-azure-sdk)...
 	"github.com/Azure/azure-sdk-for-go/services/cdn/mgmt/2021-06-01/cdn"             // nolint: staticcheck
 	"github.com/Azure/azure-sdk-for-go/services/frontdoor/mgmt/2020-11-01/frontdoor" // nolint: staticcheck
 	dnsValidate "github.com/hashicorp/go-azure-sdk/resource-manager/dns/2018-05-01/zones"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/features"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/locks"
-	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cdn/azuresdkhacks"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/services/cdn/parse"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/timeouts"
@@ -375,14 +374,10 @@ func getRouteProperties(d *pluginsdk.ResourceData, meta interface{}, id *parse.F
 func removeCustomDomainAssociationFromRoutes(d *pluginsdk.ResourceData, meta interface{}, routes *[]parse.FrontDoorRouteId, customDomainID *parse.FrontDoorCustomDomainId) error {
 	if len(*routes) != 0 && routes != nil {
 		for _, route := range *routes {
-			// lock the route resource for update...
-			locks.ByName(route.RouteName, cdnFrontDoorRouteResourceName)
-			defer locks.UnlockByName(route.RouteName, cdnFrontDoorRouteResourceName)
-
 			// Check to see if the route still exists and grab its properties...
 			// NOTE: cdnFrontDoorRouteResourceName is defined in the "cdn_frontdoor_route_disable_link_to_default_domain_resource" file
 			// ignore the error because that could just mean that the route has already been deleted...
-			customDomains, props, err := getRouteProperties(d, meta, &route, cdnFrontDoorCustomDomainResourceName)
+			customDomains, props, err := getRouteProperties(d, meta, &route, cdnFrontDoorCustomDomainResourceType)
 			if err == nil {
 				// Check to make sure the custom domain is still associated with the route
 				isAssociated := sliceContainsString(customDomains, customDomainID.ID())
@@ -390,7 +385,7 @@ func removeCustomDomainAssociationFromRoutes(d *pluginsdk.ResourceData, meta int
 				if isAssociated {
 					// it is, now removed the association...
 					newDomains := sliceRemoveString(customDomains, customDomainID.ID())
-					if err := updateRouteAssociations(d, meta, &route, newDomains, props, customDomainID); err != nil {
+					if err := updateRouteCustomDomainAssociations(d, meta, &route, newDomains, props, customDomainID); err != nil {
 						return err
 					}
 				}
@@ -401,33 +396,26 @@ func removeCustomDomainAssociationFromRoutes(d *pluginsdk.ResourceData, meta int
 	return nil
 }
 
-func updateRouteAssociations(d *pluginsdk.ResourceData, meta interface{}, routeId *parse.FrontDoorRouteId, customDomains []interface{}, props *cdn.RouteProperties, customDomainID *parse.FrontDoorCustomDomainId) error {
+func updateRouteCustomDomainAssociations(d *pluginsdk.ResourceData, meta interface{}, routeId *parse.FrontDoorRouteId, customDomains []interface{}, props *cdn.RouteProperties, customDomainID *parse.FrontDoorCustomDomainId) error {
 	client := meta.(*clients.Client).Cdn.FrontDoorRoutesClient
-	workaroundsClient := azuresdkhacks.NewCdnFrontDoorRoutesWorkaroundClient(client)
-	ctx, routeCancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
-	defer routeCancel()
-
-	updateProps := azuresdkhacks.RouteUpdatePropertiesParameters{
-		CustomDomains: expandCustomDomainActivatedResourceArray(customDomains),
-	}
-
-	// NOTE: You must pull the Cache Configuration from the existing route else you will get a diff
-	// because a nil value means disabled
-	if props.CacheConfiguration != nil {
-		updateProps.CacheConfiguration = props.CacheConfiguration
-	}
+	ctx, cancel := timeouts.ForUpdate(meta.(*clients.Client).StopContext, d)
+	defer cancel()
 
 	// NOTE: If there are no more custom domains associated with the route you must flip the
 	// 'link to default domain' field to 'true' else the route will be in an invalid state...
 	if len(customDomains) == 0 {
-		updateProps.LinkToDefaultDomain = cdn.LinkToDefaultDomainEnabled
+		props.LinkToDefaultDomain = cdn.LinkToDefaultDomainEnabled
 	}
 
-	updateParams := azuresdkhacks.RouteUpdateParameters{
-		RouteUpdatePropertiesParameters: &updateProps,
+	// Set the new list of custom domains to the route properties...
+	props.CustomDomains = expandCustomDomainActivatedResourceArray(customDomains)
+
+	routeProps := cdn.Route{
+		RouteProperties: props,
 	}
 
-	future, err := workaroundsClient.Update(ctx, routeId.ResourceGroup, routeId.ProfileName, routeId.AfdEndpointName, routeId.RouteName, updateParams)
+	// NOTE: Calling Create intentionally to avoid having to use the azuresdkhacks for the Update (PATCH) call..
+	future, err := client.Create(ctx, routeId.ResourceGroup, routeId.ProfileName, routeId.AfdEndpointName, routeId.RouteName, routeProps)
 	if err != nil {
 		return fmt.Errorf("%s: updating the association with %s: %+v", *customDomainID, *routeId, err)
 	}
