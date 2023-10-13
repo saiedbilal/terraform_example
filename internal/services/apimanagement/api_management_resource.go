@@ -1193,18 +1193,16 @@ func resourceApiManagementServiceUpdate(d *pluginsdk.ResourceData, meta interfac
 			if err != nil {
 				return err
 			}
+
 			policyServiceId := policy.NewServiceID(subscriptionId, id.ResourceGroupName, id.ServiceName)
 			if policyContract != nil {
 				if _, err := policyClient.CreateOrUpdate(ctx, policyServiceId, *policyContract, policy.CreateOrUpdateOperationOptions{}); err != nil {
 					return fmt.Errorf(" setting Policies for %s: %+v", id, err)
 				}
 			} else {
-				oldPolicy, newPolicy := d.GetChange("policy")
-				if len(oldPolicy.([]interface{})) > 0 && len(newPolicy.([]interface{})) == 0 {
-					if resp, err := policyClient.Delete(ctx, policyServiceId, policy.DeleteOperationOptions{}); err != nil {
-						if !response.WasNotFound(resp.HttpResponse) {
-							return fmt.Errorf("removing Policies from %s: %+v", id, err)
-						}
+				if resp, err := policyClient.Delete(ctx, policyServiceId, policy.DeleteOperationOptions{}); err != nil {
+					if !response.WasNotFound(resp.HttpResponse) {
+						return fmt.Errorf("removing Policies from %s: %+v", id, err)
 					}
 				}
 			}
