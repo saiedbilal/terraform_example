@@ -228,11 +228,11 @@ provider "azurerm" {
 %[1]s
 
 resource "azurerm_container_app_environment" "test" {
-  name                       = "acctest-CAEnv%[2]d"
-  resource_group_name        = azurerm_resource_group.test.name
-  location                   = azurerm_resource_group.test.location
-  logs_destination           = "azure-monitor"
-  infrastructure_subnet_id   = azurerm_subnet.control.id
+  name                     = "acctest-CAEnv%[2]d"
+  resource_group_name      = azurerm_resource_group.test.name
+  location                 = azurerm_resource_group.test.location
+  logs_destination         = "azure-monitor"
+  infrastructure_subnet_id = azurerm_subnet.control.id
 
   internal_load_balancer_enabled = true
   zone_redundancy_enabled        = true
@@ -261,7 +261,7 @@ resource "azurerm_monitor_diagnostic_setting" "test" {
 
   metric {
     category = "AllMetrics"
-    enabled  = true 
+    enabled  = true
   }
 }
 `, r.templateVNet(data), data.RandomInteger)
@@ -302,9 +302,9 @@ provider "azurerm" {
 %[1]s
 
 resource "azurerm_container_app_environment" "test" {
-  name                       = "acctest-CAEnv%[2]d"
-  resource_group_name        = azurerm_resource_group.test.name
-  location                   = azurerm_resource_group.test.location
+  name                = "acctest-CAEnv%[2]d"
+  resource_group_name = azurerm_resource_group.test.name
+  location            = azurerm_resource_group.test.location
 
   workload_profile {
     name                  = "Consumption"
@@ -358,10 +358,10 @@ provider "azurerm" {
 %[1]s
 
 resource "azurerm_container_app_environment" "test" {
-  name                       = "acctest-CAEnv%[2]d"
-  resource_group_name        = azurerm_resource_group.test.name
-  location                   = azurerm_resource_group.test.location
-  infrastructure_subnet_id   = azurerm_subnet.control.id
+  name                     = "acctest-CAEnv%[2]d"
+  resource_group_name      = azurerm_resource_group.test.name
+  location                 = azurerm_resource_group.test.location
+  infrastructure_subnet_id = azurerm_subnet.control.id
 
   internal_load_balancer_enabled = true
   zone_redundancy_enabled        = true
