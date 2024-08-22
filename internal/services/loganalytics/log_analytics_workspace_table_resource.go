@@ -158,7 +158,7 @@ func (r LogAnalyticsWorkspaceTableResource) Arguments() map[string]*pluginsdk.Sc
 		},
 
 		"categories": {
-			Type:     pluginsdk.TypeList,
+			Type:     pluginsdk.TypeSet,
 			Optional: true,
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
@@ -174,7 +174,7 @@ func (r LogAnalyticsWorkspaceTableResource) Arguments() map[string]*pluginsdk.Sc
 		},
 
 		"labels": {
-			Type:     pluginsdk.TypeList,
+			Type:     pluginsdk.TypeSet,
 			Optional: true,
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
@@ -198,7 +198,7 @@ func (r LogAnalyticsWorkspaceTableResource) Arguments() map[string]*pluginsdk.Sc
 func (r LogAnalyticsWorkspaceTableResource) Attributes() map[string]*pluginsdk.Schema {
 	return map[string]*pluginsdk.Schema{
 		"solutions": {
-			Type:     pluginsdk.TypeList,
+			Type:     pluginsdk.TypeSet,
 			Computed: true,
 			Elem: &pluginsdk.Schema{
 				Type: pluginsdk.TypeString,
@@ -477,7 +477,7 @@ func (r LogAnalyticsWorkspaceTableResource) Delete() sdk.ResourceFunc {
 				return fmt.Errorf("while parsing resource ID: %+v", err)
 			}
 
-			if metadata.ResourceData.Get("type") == string(tables.TableTypeEnumMicrosoft) {
+			if model.Type == string(tables.TableTypeEnumMicrosoft) {
 				// We can't delete Microsoft tables, so we'll just set the retention to workspace default
 				updateInput := tables.Table{
 					Properties: &tables.TableProperties{
