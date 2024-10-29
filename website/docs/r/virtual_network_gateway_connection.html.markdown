@@ -211,7 +211,7 @@ The following arguments are supported:
 
 * `type` - (Required) The type of connection. Valid options are `IPsec` (Site-to-Site), `ExpressRoute` (ExpressRoute), and `Vnet2Vnet` (VNet-to-VNet). Each connection type requires different mandatory arguments (refer to the examples above). Changing this forces a new resource to be created.
 
-* `shared_key` - (Required) The shared IPSec key. A key could be provided if a Site-to-Site, VNet-to-VNet or ExpressRoute connection is created.
+* `shared_key` - (Optional) The shared IPSec key. A key could be provided if a Site-to-Site, VNet-to-VNet or ExpressRoute connection is created.
 
 * `virtual_network_gateway_id` - (Required) The ID of the Virtual Network Gateway in which the connection will be created. Changing this forces a new resource to be created.
 

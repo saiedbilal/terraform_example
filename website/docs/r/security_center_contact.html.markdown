@@ -35,7 +35,7 @@ The following arguments are supported:
 
 * `email` - (Required) The email of the Security Center Contact.
 
-* `name` - (Optional) The name of the Security Center Contact. Defaults to `default1`.
+* `name` - (Required) The name of the Security Center Contact. Changing this forces a new resource to be created.
 
 * `phone` - (Optional) The phone number of the Security Center Contact.
 
