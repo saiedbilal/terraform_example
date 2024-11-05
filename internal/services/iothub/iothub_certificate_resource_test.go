@@ -20,7 +20,6 @@ type IotHubCertificateResource struct{}
 
 func TestAccIotHubCertificate_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_iothub_certificate", "test")
-	data.Locations.Primary = "eastus" // iothub is only available on limited regions
 	r := IotHubCertificateResource{}
 
 	data.ResourceTest(t, r, []acceptance.TestStep{
@@ -37,7 +36,6 @@ func TestAccIotHubCertificate_basic(t *testing.T) {
 
 func TestAccIotHubCertificate_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_iothub_certificate", "test")
-	data.Locations.Primary = "eastus" // iothub is only available on limited regions
 	r := IotHubCertificateResource{}
 
 	data.ResourceTest(t, r, []acceptance.TestStep{
@@ -56,7 +54,6 @@ func TestAccIotHubCertificate_requiresImport(t *testing.T) {
 
 func TestAccIotHubCertificate_update(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_iothub_certificate", "test")
-	data.Locations.Primary = "eastus" // iothub is only available on limited regions
 	r := IotHubCertificateResource{}
 
 	data.ResourceTest(t, r, []acceptance.TestStep{
