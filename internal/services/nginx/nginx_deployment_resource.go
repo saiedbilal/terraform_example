@@ -264,6 +264,27 @@ func (m DeploymentResource) Arguments() map[string]*pluginsdk.Schema {
 		"tags": commonschema.Tags(),
 	}
 
+	if !features.FivePointOhBeta() {
+		resource["logging_storage_account"] = &pluginsdk.Schema{
+			Deprecated: "The `logging_storage_account` block has been deprecated and will be removed in v5.0 of the AzureRM Provider. To enable logs, use `azurerm_monitor_diagnostic_setting` resource instead.",
+			Type:       pluginsdk.TypeList,
+			Optional:   true,
+			Elem: &pluginsdk.Resource{
+				Schema: map[string]*pluginsdk.Schema{
+					"name": {
+						Type:     pluginsdk.TypeString,
+						Optional: true,
+					},
+
+					"container_name": {
+						Type:     pluginsdk.TypeString,
+						Optional: true,
+					},
+				},
+			},
+		}
+	}
+
 	if !features.FourPointOhBeta() {
 		resource["capacity"].Default = defaultCapacity
 
@@ -396,12 +417,14 @@ func (m DeploymentResource) Create() sdk.ResourceFunc {
 			prop := &nginxdeployment.NginxDeploymentProperties{}
 			prop.ManagedResourceGroup = pointer.FromString(model.ManagedResourceGroup)
 
-			if len(model.LoggingStorageAccount) > 0 {
-				prop.Logging = &nginxdeployment.NginxLogging{
-					StorageAccount: &nginxdeployment.NginxStorageAccount{
-						AccountName:   pointer.FromString(model.LoggingStorageAccount[0].Name),
-						ContainerName: pointer.FromString(model.LoggingStorageAccount[0].ContainerName),
-					},
+			if !features.FivePointOhBeta() {
+				if len(model.LoggingStorageAccount) > 0 {
+					prop.Logging = &nginxdeployment.NginxLogging{
+						StorageAccount: &nginxdeployment.NginxStorageAccount{
+							AccountName:   pointer.FromString(model.LoggingStorageAccount[0].Name),
+							ContainerName: pointer.FromString(model.LoggingStorageAccount[0].ContainerName),
+						},
+					}
 				}
 			}
 
@@ -561,12 +584,14 @@ func (m DeploymentResource) Read() sdk.ResourceFunc {
 					output.NginxVersion = pointer.ToString(props.NginxVersion)
 					output.DiagnoseSupportEnabled = pointer.ToBool(props.EnableDiagnosticsSupport)
 
-					if props.Logging != nil && props.Logging.StorageAccount != nil {
-						output.LoggingStorageAccount = []LoggingStorageAccount{
-							{
-								Name:          pointer.ToString(props.Logging.StorageAccount.AccountName),
-								ContainerName: pointer.ToString(props.Logging.StorageAccount.ContainerName),
-							},
+					if !features.FivePointOhBeta() {
+						if props.Logging != nil && props.Logging.StorageAccount != nil {
+							output.LoggingStorageAccount = []LoggingStorageAccount{
+								{
+									Name:          pointer.ToString(props.Logging.StorageAccount.AccountName),
+									ContainerName: pointer.ToString(props.Logging.StorageAccount.ContainerName),
+								},
+							}
 						}
 					}
 
@@ -712,12 +737,14 @@ func (m DeploymentResource) Update() sdk.ResourceFunc {
 			}
 
 			req.Properties = &nginxdeployment.NginxDeploymentUpdateProperties{}
-			if meta.ResourceData.HasChange("logging_storage_account") && len(model.LoggingStorageAccount) > 0 {
-				req.Properties.Logging = &nginxdeployment.NginxLogging{
-					StorageAccount: &nginxdeployment.NginxStorageAccount{
-						AccountName:   pointer.FromString(model.LoggingStorageAccount[0].Name),
-						ContainerName: pointer.FromString(model.LoggingStorageAccount[0].ContainerName),
-					},
+			if !features.FivePointOhBeta() {
+				if meta.ResourceData.HasChange("logging_storage_account") && len(model.LoggingStorageAccount) > 0 {
+					req.Properties.Logging = &nginxdeployment.NginxLogging{
+						StorageAccount: &nginxdeployment.NginxStorageAccount{
+							AccountName:   pointer.FromString(model.LoggingStorageAccount[0].Name),
+							ContainerName: pointer.FromString(model.LoggingStorageAccount[0].ContainerName),
+						},
+					}
 				}
 			}
 

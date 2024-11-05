@@ -13,6 +13,7 @@ import (
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/commonschema"
 	"github.com/hashicorp/go-azure-helpers/resourcemanager/identity"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/nginx/2024-06-01-preview/nginxdeployment"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/features"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/validation"
@@ -249,12 +250,14 @@ func (m DeploymentDataSource) Read() sdk.ResourceFunc {
 					output.NginxVersion = pointer.ToString(props.NginxVersion)
 					output.DiagnoseSupportEnabled = pointer.ToBool(props.EnableDiagnosticsSupport)
 
-					if props.Logging != nil && props.Logging.StorageAccount != nil {
-						output.LoggingStorageAccount = []LoggingStorageAccount{
-							{
-								Name:          pointer.ToString(props.Logging.StorageAccount.AccountName),
-								ContainerName: pointer.ToString(props.Logging.StorageAccount.ContainerName),
-							},
+					if !features.FivePointOhBeta() {
+						if props.Logging != nil && props.Logging.StorageAccount != nil {
+							output.LoggingStorageAccount = []LoggingStorageAccount{
+								{
+									Name:          pointer.ToString(props.Logging.StorageAccount.AccountName),
+									ContainerName: pointer.ToString(props.Logging.StorageAccount.ContainerName),
+								},
+							}
 						}
 					}
 
