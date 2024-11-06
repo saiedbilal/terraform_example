@@ -54,7 +54,7 @@ func TestAccResourceAnomalyAlert_emailAddressSender(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_cost_anomaly_alert", "test")
 	testResource := AnomalyAlertResource{}
 	data.ResourceTest(t, testResource, []acceptance.TestStep{
-		data.ApplyStep(testResource.emailAddressSenderConfig, testResource),
+		data.ApplyStep(testResource.notificationEmailConfig, testResource),
 		data.ImportStep(),
 		data.ApplyStep(testResource.updateConfig, testResource),
 		data.ImportStep(),
@@ -141,7 +141,7 @@ resource "azurerm_cost_anomaly_alert" "test" {
 `, data.RandomInteger, data.RandomInteger)
 }
 
-func (AnomalyAlertResource) emailAddressSenderConfig(data acceptance.TestData) string {
+func (AnomalyAlertResource) notificationEmailConfig(data acceptance.TestData) string {
 	return fmt.Sprintf(`
 provider "azurerm" {
   features {}
@@ -152,7 +152,7 @@ resource "azurerm_cost_anomaly_alert" "test" {
   display_name         = "acctest %d"
   email_subject        = "Hi"
   email_addresses      = ["test@test.com", "test@hashicorp.developer"]
-  email_address_sender = "othertest@hashicorp.developer"
+  notification_email   = "othertest@hashicorp.developer"
   message              = "Custom sender email configured"
 }
 `, data.RandomInteger, data.RandomInteger)

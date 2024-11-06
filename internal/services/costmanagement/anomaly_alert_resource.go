@@ -48,7 +48,7 @@ func (AnomalyAlertResource) Arguments() map[string]*pluginsdk.Schema {
 			ValidateFunc: commonids.ValidateSubscriptionID,
 		},
 
-		"email_address_sender": {
+		"notification_email": {
 			Type:         pluginsdk.TypeString,
 			Optional:     true,
 			Computed:     true,
@@ -125,7 +125,7 @@ func (r AnomalyAlertResource) Create() sdk.ResourceFunc {
 			schedule.SetStartDateAsTime(time.Now())
 
 			var senderEmail string
-			if v, ok := metadata.ResourceData.GetOk("email_address_sender"); ok {
+			if v, ok := metadata.ResourceData.GetOk("notification_email"); ok {
 				senderEmail = v.(string)
 			} else {
 				senderEmail = (*emailAddresses)[0]
@@ -199,7 +199,7 @@ func (r AnomalyAlertResource) Update() sdk.ResourceFunc {
 			schedule.SetStartDateAsTime(time.Now())
 
 			var senderEmail string
-			if v, ok := metadata.ResourceData.GetOk("email_address_sender"); ok {
+			if v, ok := metadata.ResourceData.GetOk("notification_email"); ok {
 				senderEmail = v.(string)
 			} else {
 				senderEmail = (*emailAddresses)[0]
@@ -257,7 +257,7 @@ func (AnomalyAlertResource) Read() sdk.ResourceFunc {
 					metadata.ResourceData.Set("display_name", props.DisplayName)
 					metadata.ResourceData.Set("subscription_id", fmt.Sprint("/", *props.Scope))
 					metadata.ResourceData.Set("email_subject", props.Notification.Subject)
-					metadata.ResourceData.Set("email_address_sender", props.NotificationEmail)
+					metadata.ResourceData.Set("notification_email", props.NotificationEmail)
 					metadata.ResourceData.Set("email_addresses", props.Notification.To)
 					metadata.ResourceData.Set("message", props.Notification.Message)
 				}
