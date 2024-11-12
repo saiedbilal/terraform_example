@@ -125,11 +125,11 @@ resource "azurerm_dynatrace_monitor" "test" {
   marketplace_subscription = "Active"
 
   user {
-    first_name   = "Alice"
-    last_name    = "Bobab"
-    email        = "alice@microsoft.com"
-    phone_number = "123456"
-    country      = "westus"
+    first_name   = "%s"
+    last_name    = "%s"
+    email        = "%s"
+    phone_number = "%s"
+    country      = "%s"
   }
 
   plan {
@@ -142,5 +142,5 @@ resource "azurerm_dynatrace_monitor" "test" {
     environment = "Prod"
   }
 }
-`, data.RandomInteger, data.Locations.Primary, data.RandomString)
+`, data.RandomInteger, data.Locations.Primary, data.RandomString, MonitorsResource{}.dynatraceInfo.UserFirstName, MonitorsResource{}.dynatraceInfo.UserLastName, MonitorsResource.dynatraceInfo.UserEmail, MonitorsResource{}.dynatraceInfo.UserPhoneNumber, MonitorsResource{}.dynatraceInfo.UserCountry)
 }
