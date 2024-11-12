@@ -63,7 +63,6 @@ func (r TagRulesResource) Exists(ctx context.Context, client *clients.Client, st
 }
 
 func (r TagRulesResource) basic(data acceptance.TestData) string {
-	template := r.template(data)
 	return fmt.Sprintf(`
 %[1]s
 
@@ -89,7 +88,7 @@ resource "azurerm_dynatrace_tag_rules" "test" {
     }
   }
 }
-`, template, data.RandomString)
+`, MonitorsResource{}.basic(data), data.RandomString)
 }
 
 func (r TagRulesResource) requiresImport(data acceptance.TestData) string {
@@ -102,45 +101,4 @@ resource "azurerm_dynatrace_tag_rules" "import" {
   monitor_id = azurerm_dynatrace_tag_rules.test.monitor_id
 }
 `, template)
-}
-
-func (r TagRulesResource) template(data acceptance.TestData) string {
-	return fmt.Sprintf(`
-provider "azurerm" {
-  features {}
-}
-
-resource "azurerm_resource_group" "test" {
-  name     = "acctestRG-%[1]d"
-  location = "%[2]s"
-}
-
-resource "azurerm_dynatrace_monitor" "test" {
-  name                = "acctestacc%[2]s"
-  resource_group_name = azurerm_resource_group.test.name
-  location            = azurerm_resource_group.test.location
-  identity {
-    type = "SystemAssigned"
-  }
-  marketplace_subscription = "Active"
-
-  user {
-    first_name   = "%s"
-    last_name    = "%s"
-    email        = "%s"
-    phone_number = "%s"
-    country      = "%s"
-  }
-
-  plan {
-    usage_type    = "COMMITTED"
-    billing_cycle = "MONTHLY"
-    plan          = "azureportalintegration_privatepreview@TIDgmz7xq9ge3py"
-  }
-
-  tags = {
-    environment = "Prod"
-  }
-}
-`, data.RandomInteger, data.Locations.Primary, data.RandomString, MonitorsResource{}.dynatraceInfo.UserFirstName, MonitorsResource{}.dynatraceInfo.UserLastName, MonitorsResource.dynatraceInfo.UserEmail, MonitorsResource{}.dynatraceInfo.UserPhoneNumber, MonitorsResource{}.dynatraceInfo.UserCountry)
 }
