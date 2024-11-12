@@ -69,7 +69,7 @@ func (r TagRulesResource) basic(data acceptance.TestData) string {
 
 resource "azurerm_dynatrace_tag_rules" "test" {
   name       = "default"
-  monitor_id = azurerm_dynatrace_monitors.test.id
+  monitor_id = azurerm_dynatrace_monitor.test.id
 
   log_rule {
     filtering_tag {
@@ -77,8 +77,8 @@ resource "azurerm_dynatrace_tag_rules" "test" {
       value  = "Prod"
       action = "Include"
     }
-    send_aad_logs      = true
-    send_activity_logs = true
+    send_aad_logs      = "Enabled"
+    send_activity_logs = "Enabled"
   }
 
   metric_rule {
@@ -115,12 +115,13 @@ resource "azurerm_resource_group" "test" {
   location = "%[2]s"
 }
 
-resource "azurerm_dynatrace_monitors" "test" {
-  name                     = "acctestacc%[2]s"
-  resource_group_name      = azurerm_resource_group.test.name
-  location                 = azurerm_resource_group.test.location
-  identity_type            = "SystemAssigned"
-  monitoring_enabled       = true
+resource "azurerm_dynatrace_monitor" "test" {
+  name                = "acctestacc%[2]s"
+  resource_group_name = azurerm_resource_group.test.name
+  location            = azurerm_resource_group.test.location
+  identity {
+    type = "SystemAssigned"
+  }
   marketplace_subscription = "Active"
 
   user {
@@ -132,10 +133,13 @@ resource "azurerm_dynatrace_monitors" "test" {
   }
 
   plan {
-    usage_type     = "COMMITTED"
-    billing_cycle  = "MONTHLY"
-    plan           = "azureportalintegration_privatepreview@TIDhjdtn7tfnxcy"
-    effective_date = "2019-08-30T15:14:33Z"
+    usage_type    = "COMMITTED"
+    billing_cycle = "MONTHLY"
+    plan          = "azureportalintegration_privatepreview@TIDgmz7xq9ge3py"
+  }
+
+  tags = {
+    environment = "Prod"
   }
 }
 `, data.RandomInteger, data.Locations.Primary, data.RandomString)

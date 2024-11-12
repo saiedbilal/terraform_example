@@ -92,38 +92,29 @@ func (r TagRulesResource) Arguments() map[string]*schema.Schema {
 
 					"filtering_tag": {
 						Type:     pluginsdk.TypeList,
-						Optional: true,
+						Required: true,
 						MinItems: 1,
 						Elem: &pluginsdk.Resource{
 							Schema: map[string]*schema.Schema{
-								"billing_cycle": {
+								"action": {
 									Type:     pluginsdk.TypeString,
-									Optional: true,
+									Required: true,
 									ValidateFunc: validation.StringInSlice([]string{
-										"MONTHLY",
-										"WEEKLY",
+										"Include",
+										"Exclude",
 									}, false),
 								},
 
-								"effective_date": {
+								"name": {
 									Type:         pluginsdk.TypeString,
-									Optional:     true,
-									ValidateFunc: validation.IsRFC3339Time,
-								},
-
-								"plan_details": {
-									Type:         pluginsdk.TypeString,
-									Optional:     true,
+									Required:     true,
 									ValidateFunc: validation.StringIsNotEmpty,
 								},
 
-								"usage_type": {
-									Type:     pluginsdk.TypeString,
-									Optional: true,
-									ValidateFunc: validation.StringInSlice([]string{
-										"PAYG",
-										"COMMITTED",
-									}, false),
+								"value": {
+									Type:         pluginsdk.TypeString,
+									Required:     true,
+									ValidateFunc: validation.StringIsNotEmpty,
 								},
 							},
 						},
@@ -190,13 +181,13 @@ func (r TagRulesResource) Create() sdk.ResourceFunc {
 	return sdk.ResourceFunc{
 		Timeout: 30 * time.Minute,
 		Func: func(ctx context.Context, metadata sdk.ResourceMetaData) error {
+			client := metadata.Client.Dynatrace.TagRulesClient
+			subscriptionId := metadata.Client.Account.SubscriptionId
+
 			var model TagRulesResourceModel
 			if err := metadata.Decode(&model); err != nil {
 				return err
 			}
-
-			client := metadata.Client.Dynatrace.TagRulesClient
-			subscriptionId := metadata.Client.Account.SubscriptionId
 
 			monitorsId, err := monitors.ParseMonitorID(model.Monitor)
 			id := tagrules.NewTagRuleID(subscriptionId, monitorsId.ResourceGroupName, monitorsId.MonitorName, model.Name)

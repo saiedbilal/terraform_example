@@ -19,13 +19,16 @@ resource "azurerm_resource_group" "example" {
   location = "West Europe"
 }
 
-resource "azurerm_dynatrace_monitors" "example" {
+resource "azurerm_dynatrace_monitor" "example" {
   name                            = "exmpledynatracemonitor"
   resource_group_name             = azurerm_resource_group.example.name
   location                        = azurerm_resource_group.test.location
-  identity_type                   = "SystemAssigned"
-  monitoring_status               = "Enabled"
+  monitoring_enabled              = true
   marketplace_subscription_status = "Active"
+
+  identity {
+    type = "SystemAssigned"
+  }
 
   user {
     first_name   = "Alice"
@@ -53,9 +56,9 @@ resource "azurerm_dynatrace_tag_rules" "example" {
       value  = "Prod"
       action = "Include"
     }
-    send_aad_logs          = true
-    send_activity_logs     = true
-    send_subscription_logs = true
+    send_aad_logs          = "Enabled"
+    send_activity_logs     = "Enabled"
+    send_subscription_logs = "Enabled"
   }
 
   metric_rule {
@@ -76,9 +79,37 @@ The following arguments are supported:
 
 * `monitor_id` - (Required) Name of the Dynatrace monitor. Changing this forces a new resource to be created.
 
-* `log_rule` - (Optional) Set of rules for sending logs for the Monitor resource. Changing this forces a new resource to be created.
+* `log_rule` - (Optional) Set of rules for sending logs for the Monitor resource. Changing this forces a new resource to be created. A `log_rule` block as defined below.
 
-* `metric_rule` - (Optional) Set of rules for sending metrics for the Monitor resource. Changing this forces a new resource to be created.
+* `metric_rule` - (Optional) Set of rules for sending metrics for the Monitor resource. Changing this forces a new resource to be created. A `metric_rule` block as defined below.
+
+---
+
+The `log_rule` block supports the following:
+
+* `send_aad_logs` - (Optional) Send AAD logs. Possible values are `Enabled` and `Disabled`.
+
+* `send_activity_logs` - (Optional) Send Activity logs. Possible values are `Enabled` and `Disabled`.
+
+* `send_subscription_logs` - (Optional) Send Subscription logs. Possible values are `Enabled` and `Disabled`.
+
+* `filtering_tag` - (Optional) Filtering tag for the log rule. A `filtering_tag` block as defined below.
+
+---
+
+The `metric_rule` block supports the following:
+
+* `filtering_tag` - (Optional) Filtering tag for the metric rule. A `filtering_tag` block as defined below.
+
+---
+
+The `filtering_tag` block supports the following:
+
+* `name` - (Required) Name of the filtering tag.
+
+* `value` - (Required) Value of the filtering tag.
+
+* `action` - (Required) Action of the filtering tag. Possible values are `Include` and `Exclude`.
 
 ## Attributes Reference
 
