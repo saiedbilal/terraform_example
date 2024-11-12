@@ -6,6 +6,7 @@ package dynatrace
 import (
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/monitors"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/tagrules"
 )
 
 func ExpandDynatracePlanData(input []PlanData) *monitors.PlanData {
@@ -85,6 +86,136 @@ func FlattenDynatraceUserInfo(input []interface{}) []UserInfo {
 			FirstName:    v["first_name"].(string),
 			LastName:     v["last_name"].(string),
 			PhoneNumber:  v["phone_number"].(string),
+		},
+	}
+}
+
+func FlattenLogRules(input *tagrules.LogRules) []LogRule {
+	if input == nil {
+		return []LogRule{}
+	}
+
+	var filteringTags []FilteringTag
+	var sendAadLogs string
+	var sendActivityLogs string
+	var sendSubscriptionLogs string
+
+	if input.FilteringTags != nil {
+		filteringTags = FlattenFilteringTags(input.FilteringTags)
+	}
+
+	if input.SendActivityLogs != nil {
+		sendActivityLogs = string(*input.SendActivityLogs)
+	}
+
+	if input.SendAadLogs != nil {
+		sendAadLogs = string(*input.SendAadLogs)
+	}
+
+	if input.SendSubscriptionLogs != nil {
+		sendSubscriptionLogs = string(*input.SendSubscriptionLogs)
+	}
+
+	return []LogRule{
+		{
+			FilteringTags:        filteringTags,
+			SendAadLogs:          sendAadLogs,
+			SendActivityLogs:     sendActivityLogs,
+			SendSubscriptionLogs: sendSubscriptionLogs,
+		},
+	}
+}
+
+func FlattenFilteringTags(input *[]tagrules.FilteringTag) []FilteringTag {
+	if input == nil || len(*input) == 0 {
+		return []FilteringTag{}
+	}
+
+	var name string
+	var value string
+	var action string
+	tags := *input
+	v := tags[0]
+
+	if v.Name != nil {
+		name = *v.Name
+	}
+
+	if v.Value != nil {
+		value = *v.Value
+	}
+
+	if v.Action != nil {
+		action = string(*v.Action)
+	}
+
+	return []FilteringTag{
+		{
+			Name:   name,
+			Value:  value,
+			Action: action,
+		},
+	}
+}
+
+func FlattenMetricRules(input *tagrules.MetricRules) []MetricRule {
+	if input == nil {
+		return []MetricRule{}
+	}
+
+	var filteringTags []FilteringTag
+
+	if input.FilteringTags != nil {
+		filteringTags = FlattenFilteringTags(input.FilteringTags)
+	}
+
+	return []MetricRule{
+		{
+			FilteringTags: filteringTags,
+		},
+	}
+}
+
+func ExpandMetricRules(input []MetricRule) *tagrules.MetricRules {
+	if len(input) == 0 {
+		return nil
+	}
+	v := input[0]
+
+	return &tagrules.MetricRules{
+		FilteringTags: ExpandFilteringTag(v.FilteringTags),
+	}
+}
+
+func ExpandLogRule(input []LogRule) *tagrules.LogRules {
+	if len(input) == 0 {
+		return nil
+	}
+	v := input[0]
+	sendAadLogs := tagrules.SendAadLogsStatus(v.SendAadLogs)
+	sendActivityLogs := tagrules.SendActivityLogsStatus(v.SendActivityLogs)
+	sendSubscriptionLogs := tagrules.SendSubscriptionLogsStatus(v.SendSubscriptionLogs)
+
+	return &tagrules.LogRules{
+		FilteringTags:        ExpandFilteringTag(v.FilteringTags),
+		SendAadLogs:          pointer.To(sendAadLogs),
+		SendActivityLogs:     pointer.To(sendActivityLogs),
+		SendSubscriptionLogs: pointer.To(sendSubscriptionLogs),
+	}
+}
+
+func ExpandFilteringTag(input []FilteringTag) *[]tagrules.FilteringTag {
+	if len(input) == 0 {
+		return nil
+	}
+	v := input[0]
+	action := tagrules.TagAction(v.Action)
+
+	return &[]tagrules.FilteringTag{
+		{
+			Action: pointer.To(action),
+			Name:   pointer.To(v.Name),
+			Value:  pointer.To(v.Value),
 		},
 	}
 }

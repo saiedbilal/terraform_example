@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2021-09-01/monitors"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2021-09-01/tagrules"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/monitors"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/tagrules"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
@@ -29,9 +29,9 @@ type MetricRule struct {
 
 type LogRule struct {
 	FilteringTags        []FilteringTag `tfschema:"filtering_tag"`
-	SendAadLogs          bool           `tfschema:"send_aad_logs"`
-	SendActivityLogs     bool           `tfschema:"send_activity_logs"`
-	SendSubscriptionLogs bool           `tfschema:"send_subscription_logs"`
+	SendAadLogs          string         `tfschema:"send_aad_logs"`
+	SendActivityLogs     string         `tfschema:"send_activity_logs"`
+	SendSubscriptionLogs string         `tfschema:"send_subscription_logs"`
 }
 
 type FilteringTag struct {
@@ -56,9 +56,121 @@ func (r TagRulesResource) Arguments() map[string]*schema.Schema {
 			ValidateFunc: monitors.ValidateMonitorID,
 		},
 
-		"log_rule": SchemaLogRule(),
+		"log_rule": {
+			Type:     pluginsdk.TypeList,
+			Optional: true,
+			ForceNew: true,
+			MaxItems: 1,
+			Elem: &pluginsdk.Resource{
+				Schema: map[string]*schema.Schema{
+					"send_aad_logs": {
+						Type:     pluginsdk.TypeString,
+						Optional: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"Enabled",
+							"Disabled",
+						}, false),
+					},
 
-		"metric_rule": SchemaMetricRules(),
+					"send_activity_logs": {
+						Type:     pluginsdk.TypeString,
+						Optional: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"Enabled",
+							"Disabled",
+						}, false),
+					},
+
+					"send_subscription_logs": {
+						Type:     pluginsdk.TypeString,
+						Optional: true,
+						ValidateFunc: validation.StringInSlice([]string{
+							"Enabled",
+							"Disabled",
+						}, false),
+					},
+
+					"filtering_tag": {
+						Type:     pluginsdk.TypeList,
+						Optional: true,
+						MinItems: 1,
+						Elem: &pluginsdk.Resource{
+							Schema: map[string]*schema.Schema{
+								"billing_cycle": {
+									Type:     pluginsdk.TypeString,
+									Optional: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"MONTHLY",
+										"WEEKLY",
+									}, false),
+								},
+
+								"effective_date": {
+									Type:         pluginsdk.TypeString,
+									Optional:     true,
+									ValidateFunc: validation.IsRFC3339Time,
+								},
+
+								"plan_details": {
+									Type:         pluginsdk.TypeString,
+									Optional:     true,
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+
+								"usage_type": {
+									Type:     pluginsdk.TypeString,
+									Optional: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"PAYG",
+										"COMMITTED",
+									}, false),
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		"metric_rule": {
+			Type:     pluginsdk.TypeList,
+			Optional: true,
+			ForceNew: true,
+			MaxItems: 1,
+			Elem: &pluginsdk.Resource{
+				Schema: map[string]*schema.Schema{
+					"filtering_tag": {
+						Type:     pluginsdk.TypeList,
+						Required: true,
+						MinItems: 1,
+						Elem: &pluginsdk.Resource{
+							Schema: map[string]*schema.Schema{
+								"action": {
+									Type:     pluginsdk.TypeString,
+									Required: true,
+									ValidateFunc: validation.StringInSlice([]string{
+										"Include",
+										"Exclude",
+									}, false),
+								},
+
+								"name": {
+									Type:         pluginsdk.TypeString,
+									Required:     true,
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+
+								"value": {
+									Type:         pluginsdk.TypeString,
+									Required:     true,
+									ValidateFunc: validation.StringIsNotEmpty,
+								},
+							},
+						},
+					},
+				},
+			},
+		},
 	}
 }
 
@@ -143,7 +255,7 @@ func (r TagRulesResource) Read() sdk.ResourceFunc {
 				monitorId := monitors.NewMonitorID(id.SubscriptionId, id.ResourceGroupName, id.MonitorName)
 
 				state := TagRulesResourceModel{
-					Name:        id.RuleSetName,
+					Name:        id.TagRuleName,
 					Monitor:     monitorId.ID(),
 					LogRules:    FlattenLogRules(props.LogRules),
 					MetricRules: FlattenMetricRules(props.MetricRules),

@@ -194,6 +194,47 @@ func parseSendSubscriptionLogsStatus(input string) (*SendSubscriptionLogsStatus,
 	return &out, nil
 }
 
+type SendingMetricsStatus string
+
+const (
+	SendingMetricsStatusDisabled SendingMetricsStatus = "Disabled"
+	SendingMetricsStatusEnabled  SendingMetricsStatus = "Enabled"
+)
+
+func PossibleValuesForSendingMetricsStatus() []string {
+	return []string{
+		string(SendingMetricsStatusDisabled),
+		string(SendingMetricsStatusEnabled),
+	}
+}
+
+func (s *SendingMetricsStatus) UnmarshalJSON(bytes []byte) error {
+	var decoded string
+	if err := json.Unmarshal(bytes, &decoded); err != nil {
+		return fmt.Errorf("unmarshaling: %+v", err)
+	}
+	out, err := parseSendingMetricsStatus(decoded)
+	if err != nil {
+		return fmt.Errorf("parsing %q: %+v", decoded, err)
+	}
+	*s = *out
+	return nil
+}
+
+func parseSendingMetricsStatus(input string) (*SendingMetricsStatus, error) {
+	vals := map[string]SendingMetricsStatus{
+		"disabled": SendingMetricsStatusDisabled,
+		"enabled":  SendingMetricsStatusEnabled,
+	}
+	if v, ok := vals[strings.ToLower(input)]; ok {
+		return &v, nil
+	}
+
+	// otherwise presume it's an undefined value and best-effort it
+	out := SendingMetricsStatus(input)
+	return &out, nil
+}
+
 type TagAction string
 
 const (

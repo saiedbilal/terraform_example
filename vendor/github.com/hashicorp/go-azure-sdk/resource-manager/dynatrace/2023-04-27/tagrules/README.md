@@ -1,14 +1,14 @@
 
-## `github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2021-09-01/tagrules` Documentation
+## `github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/tagrules` Documentation
 
-The `tagrules` SDK allows for interaction with Azure Resource Manager `dynatrace` (API Version `2021-09-01`).
+The `tagrules` SDK allows for interaction with Azure Resource Manager `dynatrace` (API Version `2023-04-27`).
 
 This readme covers example usages, but further information on [using this SDK can be found in the project root](https://github.com/hashicorp/go-azure-sdk/tree/main/docs).
 
 ### Import Path
 
 ```go
-import "github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2021-09-01/tagrules"
+import "github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/tagrules"
 ```
 
 
@@ -78,26 +78,5 @@ if err != nil {
 }
 for _, item := range items {
 	// do something
-}
-```
-
-
-### Example Usage: `TagRulesClient.Update`
-
-```go
-ctx := context.TODO()
-id := tagrules.NewTagRuleID("12345678-1234-9876-4563-123456789012", "example-resource-group", "monitorName", "tagRuleName")
-
-payload := tagrules.TagRuleUpdate{
-	// ...
-}
-
-
-read, err := client.Update(ctx, id, payload)
-if err != nil {
-	// handle the error
-}
-if model := read.Model; model != nil {
-	// do something with the model/response object
 }
 ```
