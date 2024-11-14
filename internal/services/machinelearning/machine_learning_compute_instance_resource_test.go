@@ -209,12 +209,14 @@ resource "azurerm_private_endpoint" "test" {
   location            = azurerm_resource_group.test.location
   resource_group_name = azurerm_resource_group.test.name
   subnet_id           = azurerm_subnet.test.id
+
   private_service_connection {
     name                           = "test-mlworkspace-%d"
     private_connection_resource_id = azurerm_machine_learning_workspace.test.id
     subresource_names              = ["amlworkspace"]
     is_manual_connection           = false
   }
+
   private_dns_zone_group {
     name                 = "test"
     private_dns_zone_ids = [azurerm_private_dns_zone.test.id]
@@ -228,14 +230,18 @@ resource "azurerm_machine_learning_compute_instance" "test" {
   virtual_machine_size          = "STANDARD_DS2_V2"
   authorization_type            = "personal"
   node_public_ip_enabled        = false
+  subnet_resource_id            = azurerm_subnet.test.id
+  description                   = "this is desc"
+
   ssh {
+    enabled    = true
     public_key = var.ssh_key
   }
-  subnet_resource_id = azurerm_subnet.test.id
-  description        = "this is desc"
+
   tags = {
     Label1 = "Value1"
   }
+
   depends_on = [
     azurerm_subnet_network_security_group_association.test,
     azurerm_private_endpoint.test
