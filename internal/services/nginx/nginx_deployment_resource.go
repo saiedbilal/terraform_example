@@ -62,8 +62,9 @@ type AutoScaleProfile struct {
 	Max  int64  `tfschema:"max_capacity"`
 }
 
-type WebApplicationFirewallSettings struct {
-	ActivationState string `tfschema:"activation_state"`
+type WebApplicationFirewall struct {
+	ActivationState string                         `tfschema:"activation_state"`
+	Status          []WebApplicationFirewallStatus `tfschema:"status"`
 }
 
 type WebApplicationFirewallPackage struct {
@@ -84,25 +85,24 @@ type WebApplicationFirewallStatus struct {
 }
 
 type DeploymentModel struct {
-	ResourceGroupName              string                                     `tfschema:"resource_group_name"`
-	Name                           string                                     `tfschema:"name"`
-	NginxVersion                   string                                     `tfschema:"nginx_version"`
-	Identity                       []identity.ModelSystemAssignedUserAssigned `tfschema:"identity"`
-	Sku                            string                                     `tfschema:"sku"`
-	ManagedResourceGroup           string                                     `tfschema:"managed_resource_group"`
-	Location                       string                                     `tfschema:"location"`
-	Capacity                       int64                                      `tfschema:"capacity"`
-	AutoScaleProfile               []AutoScaleProfile                         `tfschema:"auto_scale_profile"`
-	DiagnoseSupportEnabled         bool                                       `tfschema:"diagnose_support_enabled"`
-	Email                          string                                     `tfschema:"email"`
-	IpAddress                      string                                     `tfschema:"ip_address"`
-	LoggingStorageAccount          []LoggingStorageAccount                    `tfschema:"logging_storage_account"`
-	FrontendPublic                 []FrontendPublic                           `tfschema:"frontend_public"`
-	FrontendPrivate                []FrontendPrivate                          `tfschema:"frontend_private"`
-	NetworkInterface               []NetworkInterface                         `tfschema:"network_interface"`
-	UpgradeChannel                 string                                     `tfschema:"automatic_upgrade_channel"`
-	WebApplicationFirewallSettings []WebApplicationFirewallSettings           `tfschema:"web_application_firewall_settings"`
-	WebApplicationFirewallStatus   []WebApplicationFirewallStatus             `tfschema:"web_application_firewall_status"`
+	ResourceGroupName      string                                     `tfschema:"resource_group_name"`
+	Name                   string                                     `tfschema:"name"`
+	NginxVersion           string                                     `tfschema:"nginx_version"`
+	Identity               []identity.ModelSystemAssignedUserAssigned `tfschema:"identity"`
+	Sku                    string                                     `tfschema:"sku"`
+	ManagedResourceGroup   string                                     `tfschema:"managed_resource_group"`
+	Location               string                                     `tfschema:"location"`
+	Capacity               int64                                      `tfschema:"capacity"`
+	AutoScaleProfile       []AutoScaleProfile                         `tfschema:"auto_scale_profile"`
+	DiagnoseSupportEnabled bool                                       `tfschema:"diagnose_support_enabled"`
+	Email                  string                                     `tfschema:"email"`
+	IpAddress              string                                     `tfschema:"ip_address"`
+	LoggingStorageAccount  []LoggingStorageAccount                    `tfschema:"logging_storage_account"`
+	FrontendPublic         []FrontendPublic                           `tfschema:"frontend_public"`
+	FrontendPrivate        []FrontendPrivate                          `tfschema:"frontend_private"`
+	NetworkInterface       []NetworkInterface                         `tfschema:"network_interface"`
+	UpgradeChannel         string                                     `tfschema:"automatic_upgrade_channel"`
+	WebApplicationFirewall []WebApplicationFirewall                   `tfschema:"web_application_firewall"`
 	// Deprecated: remove in next major version
 	Configuration []Configuration   `tfschema:"configuration,removedInNextMajorVersion"`
 	Tags          map[string]string `tfschema:"tags"`
@@ -285,7 +285,7 @@ func (m DeploymentResource) Arguments() map[string]*pluginsdk.Schema {
 				}, false),
 		},
 
-		"web_application_firewall_settings": {
+		"web_application_firewall": {
 			Type:     pluginsdk.TypeList,
 			Optional: true,
 			MaxItems: 1,
@@ -299,6 +299,18 @@ func (m DeploymentResource) Arguments() map[string]*pluginsdk.Schema {
 								"Enabled",
 								"Disabled",
 							}, false),
+					},
+					"status": {
+						Type:     pluginsdk.TypeList,
+						Computed: true,
+						Elem: &pluginsdk.Resource{
+							Schema: map[string]*pluginsdk.Schema{
+								"attack_signatures_package": webApplicationFirewallPackageComputed(),
+								"bot_signatures_package":    webApplicationFirewallPackageComputed(),
+								"threat_campaigns_package":  webApplicationFirewallPackageComputed(),
+								"component_versions":        webApplicationFirewallComponentVersionsComputed(),
+							},
+						},
 					},
 				},
 			},
@@ -392,19 +404,6 @@ func (m DeploymentResource) Attributes() map[string]*pluginsdk.Schema {
 		"ip_address": {
 			Type:     pluginsdk.TypeString,
 			Computed: true,
-		},
-
-		"web_application_firewall_status": {
-			Type:     pluginsdk.TypeList,
-			Computed: true,
-			Elem: &pluginsdk.Resource{
-				Schema: map[string]*pluginsdk.Schema{
-					"attack_signatures_package": webApplicationFirewallPackageComputed(),
-					"bot_signatures_package":    webApplicationFirewallPackageComputed(),
-					"threat_campaigns_package":  webApplicationFirewallPackageComputed(),
-					"component_versions":        webApplicationFirewallComponentVersionsComputed(),
-				},
-			},
 		},
 	}
 }
@@ -551,8 +550,8 @@ func (m DeploymentResource) Create() sdk.ResourceFunc {
 				}
 			}
 
-			if len(model.WebApplicationFirewallSettings) > 0 {
-				activationState := nginxdeployment.ActivationState(model.WebApplicationFirewallSettings[0].ActivationState)
+			if len(model.WebApplicationFirewall) > 0 {
+				activationState := nginxdeployment.ActivationState(model.WebApplicationFirewall[0].ActivationState)
 				prop.NginxAppProtect = &nginxdeployment.NginxDeploymentPropertiesNginxAppProtect{
 					WebApplicationFirewallSettings: nginxdeployment.WebApplicationFirewallSettings{
 						ActivationState: &activationState,
@@ -692,12 +691,9 @@ func (m DeploymentResource) Read() sdk.ResourceFunc {
 					}
 
 					if nap := props.NginxAppProtect; nap != nil {
+						waf := WebApplicationFirewall{}
 						if state := nap.WebApplicationFirewallSettings.ActivationState; state != nil {
-							output.WebApplicationFirewallSettings = []WebApplicationFirewallSettings{
-								{
-									string(*state),
-								},
-							}
+							waf.ActivationState = string(*state)
 						}
 						if status := nap.WebApplicationFirewallStatus; status != nil {
 							wafStatus := WebApplicationFirewallStatus{}
@@ -733,7 +729,8 @@ func (m DeploymentResource) Read() sdk.ResourceFunc {
 									},
 								}
 							}
-							output.WebApplicationFirewallStatus = []WebApplicationFirewallStatus{wafStatus}
+							waf.Status = []WebApplicationFirewallStatus{wafStatus}
+							output.WebApplicationFirewall = []WebApplicationFirewall{waf}
 						}
 					}
 
@@ -876,8 +873,8 @@ func (m DeploymentResource) Update() sdk.ResourceFunc {
 				return fmt.Errorf("basic SKUs are incompatible with `capacity` or `auto_scale_profiles`")
 			}
 
-			if meta.ResourceData.HasChange("web_application_firewall_settings") {
-				activationState := nginxdeployment.ActivationState(model.WebApplicationFirewallSettings[0].ActivationState)
+			if meta.ResourceData.HasChange("web_application_firewall") {
+				activationState := nginxdeployment.ActivationState(model.WebApplicationFirewall[0].ActivationState)
 				req.Properties.NginxAppProtect = &nginxdeployment.NginxDeploymentUpdatePropertiesNginxAppProtect{
 					WebApplicationFirewallSettings: &nginxdeployment.WebApplicationFirewallSettings{
 						ActivationState: &activationState,
