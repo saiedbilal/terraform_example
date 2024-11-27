@@ -96,13 +96,12 @@ func FlattenLogRules(input *tagrules.LogRules) []LogRule {
 	}
 
 	var logRule LogRule
-	filteringTags := make([]FilteringTag, 0)
 	var sendAadLogs bool
 	var sendActivityLogs bool
 	var sendSubscriptionLogs bool
 
 	if input.FilteringTags != nil {
-		filteringTags = FlattenFilteringTags(input.FilteringTags)
+		filteringTags := FlattenFilteringTags(input.FilteringTags)
 		logRule.FilteringTags = filteringTags
 	}
 

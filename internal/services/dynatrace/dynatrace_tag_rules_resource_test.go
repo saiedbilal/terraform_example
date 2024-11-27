@@ -3,9 +3,9 @@ package dynatrace_test
 import (
 	"context"
 	"fmt"
-	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"testing"
 
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
 	"github.com/hashicorp/go-azure-sdk/resource-manager/dynatrace/2023-04-27/tagrules"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance"
