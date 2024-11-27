@@ -95,35 +95,45 @@ func FlattenLogRules(input *tagrules.LogRules) []LogRule {
 		return []LogRule{}
 	}
 
-	var filteringTags []FilteringTag
-	var sendAadLogs string
-	var sendActivityLogs string
-	var sendSubscriptionLogs string
+	var logRule LogRule
+	filteringTags := make([]FilteringTag, 0)
+	var sendAadLogs bool
+	var sendActivityLogs bool
+	var sendSubscriptionLogs bool
 
 	if input.FilteringTags != nil {
 		filteringTags = FlattenFilteringTags(input.FilteringTags)
+		logRule.FilteringTags = filteringTags
 	}
 
 	if input.SendActivityLogs != nil {
-		sendActivityLogs = string(*input.SendActivityLogs)
+		if pointer.From(input.SendActivityLogs) == tagrules.SendActivityLogsStatusEnabled {
+			sendActivityLogs = true
+		} else {
+			sendActivityLogs = false
+		}
+		logRule.SendActivityLogs = sendActivityLogs
 	}
 
 	if input.SendAadLogs != nil {
-		sendAadLogs = string(*input.SendAadLogs)
+		if pointer.From(input.SendAadLogs) == tagrules.SendAadLogsStatusEnabled {
+			sendAadLogs = true
+		} else {
+			sendAadLogs = false
+		}
+		logRule.SendAadLogs = sendAadLogs
 	}
 
 	if input.SendSubscriptionLogs != nil {
-		sendSubscriptionLogs = string(*input.SendSubscriptionLogs)
+		if pointer.From(input.SendSubscriptionLogs) == tagrules.SendSubscriptionLogsStatusEnabled {
+			sendSubscriptionLogs = true
+		} else {
+			sendSubscriptionLogs = false
+		}
+		logRule.SendSubscriptionLogs = sendSubscriptionLogs
 	}
 
-	return []LogRule{
-		{
-			FilteringTags:        filteringTags,
-			SendAadLogs:          sendAadLogs,
-			SendActivityLogs:     sendActivityLogs,
-			SendSubscriptionLogs: sendSubscriptionLogs,
-		},
-	}
+	return []LogRule{logRule}
 }
 
 func FlattenFilteringTags(input *[]tagrules.FilteringTag) []FilteringTag {
@@ -131,29 +141,13 @@ func FlattenFilteringTags(input *[]tagrules.FilteringTag) []FilteringTag {
 		return []FilteringTag{}
 	}
 
-	var name string
-	var value string
-	var action string
-	tags := *input
-	v := tags[0]
-
-	if v.Name != nil {
-		name = *v.Name
-	}
-
-	if v.Value != nil {
-		value = *v.Value
-	}
-
-	if v.Action != nil {
-		action = string(*v.Action)
-	}
+	tags := pointer.From(input)[0]
 
 	return []FilteringTag{
 		{
-			Name:   name,
-			Value:  value,
-			Action: action,
+			Name:   pointer.From(tags.Name),
+			Value:  pointer.From(tags.Value),
+			Action: string(pointer.From(tags.Action)),
 		},
 	}
 }
@@ -163,7 +157,7 @@ func FlattenMetricRules(input *tagrules.MetricRules) []MetricRule {
 		return []MetricRule{}
 	}
 
-	var filteringTags []FilteringTag
+	filteringTags := make([]FilteringTag, 0)
 
 	if input.FilteringTags != nil {
 		filteringTags = FlattenFilteringTags(input.FilteringTags)
@@ -192,9 +186,25 @@ func ExpandLogRule(input []LogRule) *tagrules.LogRules {
 		return nil
 	}
 	v := input[0]
-	sendAadLogs := tagrules.SendAadLogsStatus(v.SendAadLogs)
-	sendActivityLogs := tagrules.SendActivityLogsStatus(v.SendActivityLogs)
-	sendSubscriptionLogs := tagrules.SendSubscriptionLogsStatus(v.SendSubscriptionLogs)
+	var sendAadLogs tagrules.SendAadLogsStatus
+	var sendActivityLogs tagrules.SendActivityLogsStatus
+	var sendSubscriptionLogs tagrules.SendSubscriptionLogsStatus
+
+	if v.SendAadLogs {
+		sendAadLogs = tagrules.SendAadLogsStatusEnabled
+	} else {
+		sendAadLogs = tagrules.SendAadLogsStatusDisabled
+	}
+	if v.SendActivityLogs {
+		sendActivityLogs = tagrules.SendActivityLogsStatusEnabled
+	} else {
+		sendActivityLogs = tagrules.SendActivityLogsStatusDisabled
+	}
+	if v.SendSubscriptionLogs {
+		sendSubscriptionLogs = tagrules.SendSubscriptionLogsStatusEnabled
+	} else {
+		sendSubscriptionLogs = tagrules.SendSubscriptionLogsStatusDisabled
+	}
 
 	return &tagrules.LogRules{
 		FilteringTags:        ExpandFilteringTag(v.FilteringTags),

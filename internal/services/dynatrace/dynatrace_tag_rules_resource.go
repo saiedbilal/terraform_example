@@ -29,9 +29,9 @@ type MetricRule struct {
 
 type LogRule struct {
 	FilteringTags        []FilteringTag `tfschema:"filtering_tag"`
-	SendAadLogs          string         `tfschema:"send_aad_logs"`
-	SendActivityLogs     string         `tfschema:"send_activity_logs"`
-	SendSubscriptionLogs string         `tfschema:"send_subscription_logs"`
+	SendAadLogs          bool           `tfschema:"send_azure_active_directory_logs_enabled"`
+	SendActivityLogs     bool           `tfschema:"send_activity_logs_enabled"`
+	SendSubscriptionLogs bool           `tfschema:"send_subscription_logs_enabled"`
 }
 
 type FilteringTag struct {
@@ -63,31 +63,19 @@ func (r TagRulesResource) Arguments() map[string]*schema.Schema {
 			MaxItems: 1,
 			Elem: &pluginsdk.Resource{
 				Schema: map[string]*schema.Schema{
-					"send_aad_logs": {
-						Type:     pluginsdk.TypeString,
+					"send_azure_active_directory_logs_enabled": {
+						Type:     pluginsdk.TypeBool,
 						Optional: true,
-						ValidateFunc: validation.StringInSlice([]string{
-							"Enabled",
-							"Disabled",
-						}, false),
 					},
 
-					"send_activity_logs": {
-						Type:     pluginsdk.TypeString,
+					"send_activity_logs_enabled": {
+						Type:     pluginsdk.TypeBool,
 						Optional: true,
-						ValidateFunc: validation.StringInSlice([]string{
-							"Enabled",
-							"Disabled",
-						}, false),
 					},
 
-					"send_subscription_logs": {
-						Type:     pluginsdk.TypeString,
+					"send_subscription_logs_enabled": {
+						Type:     pluginsdk.TypeBool,
 						Optional: true,
-						ValidateFunc: validation.StringInSlice([]string{
-							"Enabled",
-							"Disabled",
-						}, false),
 					},
 
 					"filtering_tag": {
@@ -272,10 +260,8 @@ func (r TagRulesResource) Delete() sdk.ResourceFunc {
 
 			metadata.Logger.Infof("deleting %s", *id)
 
-			if resp, err := client.Delete(ctx, *id); err != nil {
-				if !response.WasNotFound(resp.HttpResponse) {
-					return fmt.Errorf("deleting %s: %+v", *id, err)
-				}
+			if _, err := client.Delete(ctx, *id); err != nil {
+				return fmt.Errorf("deleting %s: %+v", *id, err)
 			}
 			return nil
 		},

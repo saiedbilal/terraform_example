@@ -3,6 +3,7 @@ package dynatrace_test
 import (
 	"context"
 	"fmt"
+	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"testing"
 
 	"github.com/hashicorp/go-azure-helpers/lang/response"
@@ -11,7 +12,6 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/acceptance/check"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/clients"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
-	"github.com/hashicorp/terraform-provider-azurerm/utils"
 )
 
 type TagRulesResource struct{}
@@ -55,11 +55,11 @@ func (r TagRulesResource) Exists(ctx context.Context, client *clients.Client, st
 	resp, err := client.Dynatrace.TagRulesClient.Get(ctx, *id)
 	if err != nil {
 		if response.WasNotFound(resp.HttpResponse) {
-			return utils.Bool(false), nil
+			return pointer.To(false), nil
 		}
 		return nil, fmt.Errorf("retrieving %s: %+v", *id, err)
 	}
-	return utils.Bool(true), nil
+	return pointer.To(true), nil
 }
 
 func (r TagRulesResource) basic(data acceptance.TestData) string {
@@ -67,7 +67,7 @@ func (r TagRulesResource) basic(data acceptance.TestData) string {
 %[1]s
 
 resource "azurerm_dynatrace_tag_rules" "test" {
-  name       = "default"
+  name       = "acctestdyantracetagrules%d"
   monitor_id = azurerm_dynatrace_monitor.test.id
 
   log_rule {
@@ -76,8 +76,8 @@ resource "azurerm_dynatrace_tag_rules" "test" {
       value  = "Prod"
       action = "Include"
     }
-    send_aad_logs      = "Enabled"
-    send_activity_logs = "Enabled"
+    send_azure_active_directory_logs_enabled      = true
+    send_activity_logs_enabled = true
   }
 
   metric_rule {
@@ -88,7 +88,7 @@ resource "azurerm_dynatrace_tag_rules" "test" {
     }
   }
 }
-`, MonitorsResource{}.basic(data), data.RandomString)
+`, MonitorsResource{}.basic(data), data.RandomInteger)
 }
 
 func (r TagRulesResource) requiresImport(data acceptance.TestData) string {

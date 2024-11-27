@@ -56,9 +56,9 @@ resource "azurerm_dynatrace_tag_rules" "example" {
       value  = "Prod"
       action = "Include"
     }
-    send_aad_logs          = "Enabled"
-    send_activity_logs     = "Enabled"
-    send_subscription_logs = "Enabled"
+    send_azure_active_directory_logs_enabled          = true
+    send_activity_logs_enabled     = true
+    send_subscription_logs_enabled = "true
   }
 
   metric_rule {
@@ -87,11 +87,11 @@ The following arguments are supported:
 
 The `log_rule` block supports the following:
 
-* `send_aad_logs` - (Optional) Send AAD logs. Possible values are `Enabled` and `Disabled`.
+* `send_azure_active_directory_logs_enabled` - (Optional) Send Azure Active Directory logs.
 
-* `send_activity_logs` - (Optional) Send Activity logs. Possible values are `Enabled` and `Disabled`.
+* `send_activity_logs_enabled` - (Optional) Send Activity logs.
 
-* `send_subscription_logs` - (Optional) Send Subscription logs. Possible values are `Enabled` and `Disabled`.
+* `send_subscription_logs_enabled` - (Optional) Send Subscription logs.
 
 * `filtering_tag` - (Optional) Filtering tag for the log rule. A `filtering_tag` block as defined below.
 
@@ -121,10 +121,9 @@ In addition to the Arguments listed above - the following Attributes are exporte
 
 The `timeouts` block allows you to specify [timeouts](https://www.terraform.io/language/resources/syntax#operation-timeouts) for certain actions:
 
-* `create` - (Defaults to 1 hour) Used when creating the Dynatrace tag rules.
+* `create` - (Defaults to 30 minutes) Used when creating the Dynatrace tag rules.
 * `read` - (Defaults to 5 minutes) Used when retrieving the Dynatrace tag rules.
-* `update` - (Defaults to 1 hour) Used when updating the Dynatrace tag rules.
-* `delete` - (Defaults to 1 hour) Used when deleting the Dynatrace tag rules.
+* `delete` - (Defaults to 30 minutes) Used when deleting the Dynatrace tag rules.
 
 ## Import
 
