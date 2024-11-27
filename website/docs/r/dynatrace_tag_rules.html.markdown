@@ -56,9 +56,9 @@ resource "azurerm_dynatrace_tag_rules" "example" {
       value  = "Prod"
       action = "Include"
     }
-    send_azure_active_directory_logs_enabled          = true
-    send_activity_logs_enabled     = true
-    send_subscription_logs_enabled = "true
+    send_azure_active_directory_logs_enabled = true
+    send_activity_logs_enabled               = true
+    send_subscription_logs_enabled           = true
   }
 
   metric_rule {

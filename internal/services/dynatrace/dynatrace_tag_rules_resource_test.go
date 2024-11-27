@@ -76,8 +76,8 @@ resource "azurerm_dynatrace_tag_rules" "test" {
       value  = "Prod"
       action = "Include"
     }
-    send_azure_active_directory_logs_enabled      = true
-    send_activity_logs_enabled = true
+    send_azure_active_directory_logs_enabled = true
+    send_activity_logs_enabled               = true
   }
 
   metric_rule {
