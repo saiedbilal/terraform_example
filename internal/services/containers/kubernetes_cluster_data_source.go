@@ -713,6 +713,28 @@ func dataSourceKubernetesCluster() *pluginsdk.Resource {
 				},
 			},
 
+			"workload_autoscaler_profile": {
+				Type:     pluginsdk.TypeList,
+				Computed: true,
+				Elem: &pluginsdk.Resource{
+					Schema: map[string]*pluginsdk.Schema{
+						"keda_enabled": {
+							Type:     pluginsdk.TypeBool,
+							Computed: true,
+						},
+						"vertical_pod_autoscaler_enabled": {
+							Type:     pluginsdk.TypeBool,
+							Computed: true,
+						},
+					},
+				},
+			},
+
+			"workload_identity_enabled": {
+				Type:     pluginsdk.TypeBool,
+				Computed: true,
+			},
+
 			"tags": commonschema.TagsDataSource(),
 		},
 	}
@@ -883,6 +905,18 @@ func dataSourceKubernetesClusterRead(d *pluginsdk.ResourceData, meta interface{}
 			d.Set("kube_admin_config_raw", adminKubeConfigRaw)
 			if err := d.Set("kube_admin_config", adminKubeConfig); err != nil {
 				return fmt.Errorf("setting `kube_admin_config`: %+v", err)
+			}
+
+			if err := d.Set("workload_autoscaler_profile", props.WorkloadAutoScalerProfile); err != nil {
+				return fmt.Errorf("setting `workload_autoscaler_profile`: %+v", err)
+			}
+
+			// if err = d.set("workload_autoscaler_profile_keda", props.WorkloadAutoScalerProfile); err != nil {
+			// 	return fmt.Errorf("setting `workload_autoscaler_profile`: %+v", err)
+			// }
+
+			if err := d.Set("workload_identity_enabled", props.WorkloadIdentityEnabled); err != nil {
+				return fmt.Errorf("setting `workload_identity_enabled`: %+v", err)
 			}
 		}
 
@@ -1464,3 +1498,16 @@ func flattenKubernetesClusterDataSourceUpgradeSettings(input *managedclusters.Ag
 
 	return []interface{}{values}
 }
+
+// func flattenKubernetesClusterDataSourceWorkloadAutoScalerProfile(input *managedclusters.ManagedClusterWorkloadAutoScalerProfile) []interface{} {
+// 	values := make(map[string]interface{})
+
+// 	if input == nil {
+// 		return []interface{}{values}
+// 	}
+
+// 	values["keda_enabled"] = input.KedaEnabled
+// 	values["vertical_pod_autoscaler_enabled"] = input.VerticalPodAutoscalerEnabled
+
+// 	return []interface{}{values}
+// }
