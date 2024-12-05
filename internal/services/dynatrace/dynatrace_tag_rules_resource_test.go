@@ -3,6 +3,7 @@ package dynatrace_test
 import (
 	"context"
 	"fmt"
+	"os"
 	"testing"
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
@@ -14,11 +15,26 @@ import (
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
 
-type TagRulesResource struct{}
+type TagRulesResource struct {
+	dynatraceInfo dynatraceInfo
+}
+
+func NewTagRulesResource() TagRulesResource {
+	return TagRulesResource{
+		dynatraceInfo: dynatraceInfo{
+			UserCountry:     os.Getenv("DYNATRACE_USER_COUNTRY"),
+			UserEmail:       os.Getenv("DYNATRACE_USER_EMAIL"),
+			UserFirstName:   os.Getenv("DYNATRACE_USER_FIRST_NAME"),
+			UserLastName:    os.Getenv("DYNATRACE_USER_LAST_NAME"),
+			UserPhoneNumber: os.Getenv("DYNATRACE_USER_PHONE_NUMBER"),
+		},
+	}
+}
 
 func TestAccDynatraceTagRules_basic(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_dynatrace_tag_rules", "test")
-	r := TagRulesResource{}
+	r := NewTagRulesResource()
+	r.preCheck(t)
 
 	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
@@ -33,7 +49,8 @@ func TestAccDynatraceTagRules_basic(t *testing.T) {
 
 func TestAccDynatraceTagRules_requiresImport(t *testing.T) {
 	data := acceptance.BuildTestData(t, "azurerm_dynatrace_tag_rules", "test")
-	r := TagRulesResource{}
+	r := NewTagRulesResource()
+	r.preCheck(t)
 
 	data.ResourceTest(t, r, []acceptance.TestStep{
 		{
@@ -44,6 +61,24 @@ func TestAccDynatraceTagRules_requiresImport(t *testing.T) {
 		},
 		data.RequiresImportErrorStep(r.requiresImport),
 	})
+}
+
+func (r TagRulesResource) preCheck(t *testing.T) {
+	if r.dynatraceInfo.UserCountry == "" {
+		t.Skipf("DYNATRACE_USER_COUNTRY must be set for acceptance tests")
+	}
+	if r.dynatraceInfo.UserEmail == "" {
+		t.Skipf("DYNATRACE_USER_EMAIL must be set for acceptance tests")
+	}
+	if r.dynatraceInfo.UserFirstName == "" {
+		t.Skipf("DYNATRACE_USER_FIRST_NAME must be set for acceptance tests")
+	}
+	if r.dynatraceInfo.UserLastName == "" {
+		t.Skipf("DYNATRACE_USER_LAST_NAME must be set for acceptance tests")
+	}
+	if r.dynatraceInfo.UserPhoneNumber == "" {
+		t.Skipf("DYNATRACE_USER_PHONE_NUMBER must be set for acceptance tests")
+	}
 }
 
 func (r TagRulesResource) Exists(ctx context.Context, client *clients.Client, state *pluginsdk.InstanceState) (*bool, error) {
