@@ -2363,6 +2363,11 @@ resource "azurerm_container_app" "test" {
       latest_revision = true
       percentage      = 100
     }
+    additional_port_mapping {
+      external     = true
+      exposed_port = 5556
+      target_port  = 5556
+    }
   }
 }
 `, r.templateWithVnet(data), data.RandomInteger, revisionSuffix)
