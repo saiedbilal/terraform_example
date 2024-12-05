@@ -4,9 +4,13 @@
 package client
 
 import (
+	"fmt"
+
 	cdnSdk "github.com/Azure/azure-sdk-for-go/services/cdn/mgmt/2020-09-01/cdn"          // nolint: staticcheck
 	cdnFrontDoorSdk "github.com/Azure/azure-sdk-for-go/services/cdn/mgmt/2021-06-01/cdn" // nolint: staticcheck
 	"github.com/Azure/azure-sdk-for-go/services/frontdoor/mgmt/2020-11-01/frontdoor"     // nolint: staticcheck
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cdn/2024-02-01/profiles"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/cdn/2024-02-01/securitypolicies"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/common"
 )
 
@@ -15,10 +19,10 @@ type Client struct {
 	FrontDoorOriginGroupsClient           *cdnFrontDoorSdk.AFDOriginGroupsClient
 	FrontDoorOriginsClient                *cdnFrontDoorSdk.AFDOriginsClient
 	FrontDoorCustomDomainsClient          *cdnFrontDoorSdk.AFDCustomDomainsClient
-	FrontDoorSecurityPoliciesClient       *cdnFrontDoorSdk.SecurityPoliciesClient
+	FrontDoorSecurityPoliciesClient       *securitypolicies.SecurityPoliciesClient
 	FrontDoorRoutesClient                 *cdnFrontDoorSdk.RoutesClient
 	FrontDoorRulesClient                  *cdnFrontDoorSdk.RulesClient
-	FrontDoorProfileClient                *cdnFrontDoorSdk.ProfilesClient
+	FrontDoorProfilesClient               *profiles.ProfilesClient
 	FrontDoorSecretsClient                *cdnFrontDoorSdk.SecretsClient
 	FrontDoorRuleSetsClient               *cdnFrontDoorSdk.RuleSetsClient
 	FrontDoorLegacyFirewallPoliciesClient *frontdoor.PoliciesClient
@@ -27,7 +31,13 @@ type Client struct {
 	ProfilesClient                        *cdnSdk.ProfilesClient
 }
 
-func NewClient(o *common.ClientOptions) *Client {
+func NewClient(o *common.ClientOptions) (*Client, error) {
+	frontDoorProfilesClient, err := profiles.NewProfilesClientWithBaseURI(o.Environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building ProfilesClient: %+v", err)
+	}
+	o.Configure(frontDoorProfilesClient.Client, o.Authorizers.ResourceManager)
+
 	frontDoorEndpointsClient := cdnFrontDoorSdk.NewAFDEndpointsClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&frontDoorEndpointsClient.Client, o.ResourceManagerAuthorizer)
 
@@ -40,8 +50,11 @@ func NewClient(o *common.ClientOptions) *Client {
 	frontDoorCustomDomainsClient := cdnFrontDoorSdk.NewAFDCustomDomainsClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&frontDoorCustomDomainsClient.Client, o.ResourceManagerAuthorizer)
 
-	frontDoorPolicySecurityPoliciesClient := cdnFrontDoorSdk.NewSecurityPoliciesClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
-	o.ConfigureClient(&frontDoorPolicySecurityPoliciesClient.Client, o.ResourceManagerAuthorizer)
+	frontDoorSecurityPoliciesClient, err := securitypolicies.NewSecurityPoliciesClientWithBaseURI(o.Environment.ResourceManager)
+	if err != nil {
+		return nil, fmt.Errorf("building SecurityPoliciesClient: %+v", err)
+	}
+	o.Configure(frontDoorSecurityPoliciesClient.Client, o.Authorizers.ResourceManager)
 
 	frontDoorLegacyFirewallPoliciesClient := frontdoor.NewPoliciesClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&frontDoorLegacyFirewallPoliciesClient.Client, o.ResourceManagerAuthorizer)
@@ -51,9 +64,6 @@ func NewClient(o *common.ClientOptions) *Client {
 
 	frontDoorRulesClient := cdnFrontDoorSdk.NewRulesClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&frontDoorRulesClient.Client, o.ResourceManagerAuthorizer)
-
-	frontDoorProfilesClient := cdnFrontDoorSdk.NewProfilesClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
-	o.ConfigureClient(&frontDoorProfilesClient.Client, o.ResourceManagerAuthorizer)
 
 	frontDoorPolicySecretsClient := cdnFrontDoorSdk.NewSecretsClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&frontDoorPolicySecretsClient.Client, o.ResourceManagerAuthorizer)
@@ -70,15 +80,15 @@ func NewClient(o *common.ClientOptions) *Client {
 	profilesClient := cdnSdk.NewProfilesClientWithBaseURI(o.ResourceManagerEndpoint, o.SubscriptionId)
 	o.ConfigureClient(&profilesClient.Client, o.ResourceManagerAuthorizer)
 
-	return &Client{
+	client := Client{
 		FrontDoorEndpointsClient:              &frontDoorEndpointsClient,
 		FrontDoorOriginGroupsClient:           &frontDoorOriginGroupsClient,
 		FrontDoorOriginsClient:                &frontDoorOriginsClient,
 		FrontDoorCustomDomainsClient:          &frontDoorCustomDomainsClient,
-		FrontDoorSecurityPoliciesClient:       &frontDoorPolicySecurityPoliciesClient,
+		FrontDoorSecurityPoliciesClient:       frontDoorSecurityPoliciesClient,
 		FrontDoorRoutesClient:                 &frontDoorRoutesClient,
 		FrontDoorRulesClient:                  &frontDoorRulesClient,
-		FrontDoorProfileClient:                &frontDoorProfilesClient,
+		FrontDoorProfilesClient:               frontDoorProfilesClient,
 		FrontDoorSecretsClient:                &frontDoorPolicySecretsClient,
 		FrontDoorRuleSetsClient:               &frontDoorRuleSetsClient,
 		FrontDoorLegacyFirewallPoliciesClient: &frontDoorLegacyFirewallPoliciesClient,
@@ -86,4 +96,6 @@ func NewClient(o *common.ClientOptions) *Client {
 		EndpointsClient:                       &endpointsClient,
 		ProfilesClient:                        &profilesClient,
 	}
+
+	return &client, nil
 }
