@@ -10,8 +10,9 @@ import (
 
 	"github.com/hashicorp/go-azure-helpers/lang/pointer"
 	"github.com/hashicorp/go-azure-helpers/lang/response"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/nginx/2024-06-01-preview/nginxconfiguration"
-	"github.com/hashicorp/go-azure-sdk/resource-manager/nginx/2024-06-01-preview/nginxdeployment"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/nginx/2024-09-01-preview/nginxconfiguration"
+	"github.com/hashicorp/go-azure-sdk/resource-manager/nginx/2024-09-01-preview/nginxdeployment"
+	"github.com/hashicorp/terraform-provider-azurerm/internal/features"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/sdk"
 	"github.com/hashicorp/terraform-provider-azurerm/internal/tf/pluginsdk"
 )
@@ -39,7 +40,7 @@ func (m ConfigurationDataSource) Arguments() map[string]*pluginsdk.Schema {
 }
 
 func (m ConfigurationDataSource) Attributes() map[string]*pluginsdk.Schema {
-	return map[string]*pluginsdk.Schema{
+	dataSource := map[string]*pluginsdk.Schema{
 		"config_file": {
 			Type:     pluginsdk.TypeSet,
 			Computed: true,
@@ -63,12 +64,6 @@ func (m ConfigurationDataSource) Attributes() map[string]*pluginsdk.Schema {
 			Computed: true,
 			Elem: &pluginsdk.Resource{
 				Schema: map[string]*pluginsdk.Schema{
-					"content": {
-						Type:      pluginsdk.TypeString,
-						Computed:  true,
-						Sensitive: true,
-					},
-
 					"virtual_path": {
 						Type:     pluginsdk.TypeString,
 						Computed: true,
@@ -87,6 +82,16 @@ func (m ConfigurationDataSource) Attributes() map[string]*pluginsdk.Schema {
 			Computed: true,
 		},
 	}
+
+	if !features.FivePointOhBeta() {
+		dataSource["protected_file"].Elem.(*pluginsdk.Resource).Schema["content"] = &pluginsdk.Schema{
+			Type:       pluginsdk.TypeString,
+			Computed:   true,
+			Sensitive:  true,
+			Deprecated: "the `content` property is deprecated and will be removed in v5.0 of the AzureRM Provider.",
+		}
+	}
+	return dataSource
 }
 
 func (m ConfigurationDataSource) ModelObject() interface{} {
@@ -148,7 +153,6 @@ func (m ConfigurationDataSource) Read() sdk.ResourceFunc {
 				if files := prop.ProtectedFiles; files != nil {
 					for _, file := range *files {
 						output.ProtectedFile = append(output.ProtectedFile, ProtectedFile{
-							Content:     pointer.From(file.Content),
 							VirtualPath: pointer.From(file.VirtualPath),
 						})
 					}
